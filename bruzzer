@@ -1,1 +1,9 @@
+int speakerPin = 8; 
 
+void setup () {
+pinMode (speakerPin, OUTPUT);
+}
+
+void loop () {
+analogWrite (speakerPin, 255);
+}
