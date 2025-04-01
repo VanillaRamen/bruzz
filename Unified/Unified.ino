@@ -146,8 +146,8 @@ void loop() {
 
 
   // alerting
-  // TODO: refactor this entire thingW
-  // while (currentMode == ONLY_SOUND) { // switch is set to buzzer
+  // TODO: refactor this entire thing
+  // while (currentMode == ONLY_SOUND && objectDetected == DETECTED) { // switch is set to buzzer
   //   // TODO: change escape value
   //   if (mode != BUZZER) { // resets RGBLED values
   //     mode = BUZZER; // RGBLEDs stay lit without this
