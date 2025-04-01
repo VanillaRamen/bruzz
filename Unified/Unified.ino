@@ -102,14 +102,14 @@ void loop() {
  
 
   // weight detection
-  // Read the FSR pin and store the outputas fsrreading:
+  // Read the FSR pin and store the outputs fsrreading:
   fsrreading = analogRead(fsrpin);
   Serial.print("Analog reading = ");
   // Print the fsrreading:
   Serial.print(fsrreading);
-  // We can set some threshholds to display how much pressure is roughly applied:
+  // We can set some thresholds to display how much pressure is roughly applied:
   // TODO: use this value in an if() or while() as a threshold gate
-  if (fsrreading < 200) {
+  if (fsrreading > 200) {
     objectDetected = DETECTED;
   }
    else {
