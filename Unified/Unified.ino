@@ -74,6 +74,9 @@ void setup() {
 void loop() {
   // user interface
   // Updates the mode going up
+  int upState   = digitalRead(BUTTON_UP);
+  int downState = digitalRead(BUTTON_DOWN);
+
   if (upState == HIGH && lastUpState == LOW) { 
     currentMode++;
     if (currentMode >= 4) {
