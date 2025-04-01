@@ -16,20 +16,24 @@ String modes[4] {"Both", "Only Lights", "Only Sound", "Off"};
 int currentMode = BOTH;
 int lastUpState = HIGH; // Saves the state of the button, helpful to know if it was pressed
 int lastDownState = HIGH;
+
 // 8 pins
 
 
 // weight
 #define fsrpin A0
 int fsrreading { 0 }; // from 0 to 1023
+enum WEIGHT_DETECTED {NOT_DETECTED, DETECTED};
+int objectDetected = NOT_DETECTED;
 // one pin
 
 // motion detection
-// int ledPin = (unassigned);
+int ledPin = (0); //Placeholder value for ledPin
 // for motion detection LED, see RGB LED assignments
 #define pin_pir 8
 int pirState = LOW; // PIR     detection state
 int val = 0; // Value of PIR Input
+bool alertUser = false;
 // 2 pins
 
 // alert
@@ -62,7 +66,7 @@ void setup() {
   updateLCD();
 
   // motion detection
-  pinMode(pirPin,INPUT); // Sets PIR to Input data
+  pinMode(pin_pir,INPUT); // Sets PIR to Input data
 
   // alerting
   pinMode(pin_buzzer, OUTPUT);
@@ -72,11 +76,10 @@ void setup() {
 }
 
 void loop() {
-  // user interface
-  // Updates the mode going up
   int upState   = digitalRead(BUTTON_UP);
   int downState = digitalRead(BUTTON_DOWN);
-
+  // user interface
+  // Updates the mode going up
   if (upState == HIGH && lastUpState == LOW) { 
     currentMode++;
     if (currentMode >= 4) {
@@ -96,7 +99,7 @@ void loop() {
   }
   lastDownState = downState;
   // end user interface
-
+ 
 
   // weight detection
   // Read the FSR pin and store the outputas fsrreading:
@@ -106,33 +109,30 @@ void loop() {
   Serial.print(fsrreading);
   // We can set some threshholds to display how much pressure is roughly applied:
   // TODO: use this value in an if() or while() as a threshold gate
-  if (fsrreading < 10) {
-    Serial.println(" - No pressure");
-  } else if (fsrreading < 200) {
-    Serial.println(" - Light touch");
-  } else if (fsrreading < 500) {
-    Serial.println(" - Light squeeze");
-  } else if (fsrreading < 800) {
-    Serial.println(" - Medium squeeze");
-  } else {
-    Serial.println(" - Big squeeze");
+  if (fsrreading < 200) {
+    objectDetected = DETECTED;
+  }
+   else {
+    objectDetected = NOT_DETECTED;
   }
   delay(1000); // problematic
   // end weight detection
 
 
   // motion detection
-  val = digitalRead(pirPin);  // read input value
-  if (val == HIGH) {            // check if the input is HIGH
+  val = digitalRead(pin_pir);  // read input value
+  if (val == HIGH && objectDetected == DETECTED) {            // check if the input is HIGH
     // TODO: refactor for RGB LED
-    // digitalWrite(ledPin, HIGH);  // turn LED ON
+    alertUser = true;
     if (pirState == HIGH) {
+      
       
       Serial.println("Motion detected!"); //PIR sensor is detecting
      
       pirState = LOW; //Set to low so Statement is only printed once
     }
-  } else {
+  }
+   else {
     // TODO: refactor for RGB LED
     // digitalWrite(ledPin, LOW); // turn LED OFF
     if (pirState == LOW){
@@ -147,65 +147,65 @@ void loop() {
 
   // alerting
   // TODO: refactor this entire thingW
-  while (currentMode == ONLY_SOUND) { // switch is set to buzzer
-    // TODO: change escape value
-    if (mode != BUZZER) { // resets RGBLED values
-      mode = BUZZER; // RGBLEDs stay lit without this
-      analogWrite(6, 0);
-      analogWrite(5, 0);
-      analogWrite(3, 0);
-    }
-    tone(10, 440, 1000); // buzzer sounds (later on, hardcode "Animals" by Maroon 5 into a function)
-    // TODO: if button pressed break;
-  }
+  // while (currentMode == ONLY_SOUND) { // switch is set to buzzer
+  //   // TODO: change escape value
+  //   if (mode != BUZZER) { // resets RGBLED values
+  //     mode = BUZZER; // RGBLEDs stay lit without this
+  //     analogWrite(6, 0);
+  //     analogWrite(5, 0);
+  //     analogWrite(3, 0);
+  //   }
+  //   tone(10, 440, 1000); // buzzer sounds (later on, hardcode "Animals" by Maroon 5 into a function)
+  //   // TODO: if button pressed break;
+  // }
 
-  while (currentMode == ONLY_LIGHTS) { // switch is set to LED
-    // TODO: change escape value
-    // TODO: if button pressed break;
-    if (mode != RGBLED) {
-      mode = RGBLED;
-      noTone(10);
-    }
+  // while (currentMode == ONLY_LIGHTS) { // switch is set to LED
+  //   // TODO: change escape value
+  //   // TODO: if button pressed break;
+  //   if (mode != RGBLED) {
+  //     mode = RGBLED;
+  //     noTone(10);
+  //   }
 
-    if (colorphase == 0) {
-      RED = 255;
-      GREEN = 0;
-      BLUE = 0;
-      for (; digitalRead(13) == LOW && RED > 0;) {
-        // TODO: if button pressed break;
-        analogWrite(6, RED); analogWrite(5, GREEN);
-        RED--;
-        GREEN++;
-        delay(5);
-      }
-      colorphase++;
-    } else if (colorphase == 1) {
-      RED = 0;
-      GREEN = 255;
-      BLUE = 0;
-      for (; digitalRead(13) == LOW && GREEN > 0;) {
-        // TODO: if button pressed break;
-        analogWrite(5, GREEN); analogWrite(3, BLUE);
-        GREEN--;
-        BLUE++;
-        delay(5);
-      }
-      colorphase++;
-    } else if (colorphase == 2) {
-      RED = 0;
-      GREEN = 0;
-      BLUE = 255;
-      for (; digitalRead(13) == LOW && BLUE > 0;) {
-        // TODO: if button pressed break;
-        analogWrite(6, RED); analogWrite(3, BLUE);
-        RED++;
-        BLUE--;
-        delay(5);
-      }
-      colorphase = 0;
-    }
-  }
-  // end alerting
+  //   if (colorphase == 0) {
+  //     RED = 255;
+  //     GREEN = 0;
+  //     BLUE = 0;
+  //     for (; digitalRead(13) == LOW && RED > 0;) {
+  //       // TODO: if button pressed break;
+  //       analogWrite(6, RED); analogWrite(5, GREEN);
+  //       RED--;
+  //       GREEN++;
+  //       delay(5);
+  //     }
+  //     colorphase++;
+  //   } else if (colorphase == 1) {
+  //     RED = 0;
+  //     GREEN = 255;
+  //     BLUE = 0;
+  //     for (; digitalRead(13) == LOW && GREEN > 0;) {
+  //       // TODO: if button pressed break;
+  //       analogWrite(5, GREEN); analogWrite(3, BLUE);
+  //       GREEN--;
+  //       BLUE++;
+  //       delay(5);
+  //     }
+  //     colorphase++;
+  //   } else if (colorphase == 2) {
+  //     RED = 0;
+  //     GREEN = 0;
+  //     BLUE = 255;
+  //     for (; digitalRead(13) == LOW && BLUE > 0;) {
+  //       // TODO: if button pressed break;
+  //       analogWrite(6, RED); analogWrite(3, BLUE);
+  //       RED++;
+  //       BLUE--;
+  //       delay(5);
+  //     }
+  //     colorphase = 0;
+  //   }
+  // }
+  // // end alerting
 
 
 } // end loop()
