@@ -161,29 +161,14 @@ void loop() {
     analogWrite(rgb_green, 0);
     analogWrite(rgb_blue, 0);
     noTone(pin_buzzer);
-  } else {
-    // while (!button_pressed()) {
-    //   if (currentMode == BOTH) {
-    //     cycleLED();
-    //     soundBuzzer();
-    //   } else if (currentMode == ONLY_LIGHTS) {
-    //     cycleLED();
-    //   } else if (currentMode == ONLY_SOUND) {
-    //     soundBuzzer();
-    //   } else { // some error
-    //     Serial.println("Error: invalid mode detected. (Alerting Subsystem)");
-    //   }
-    // }
-    if (currentMode == BOTH) {
-      while (cycleLED_buzz()) {}
-    } else if (currentMode == ONLY_LIGHTS) {
-      while (cycleLED()) {}
-    } else if (currentMode == ONLY_SOUND) {
-      while(soundBuzzer()) {};
-    }
+  } else if (currentMode == BOTH) {
+    while (cycleLED_buzz()) {}
+  } else if (currentMode == ONLY_LIGHTS) {
+    while (cycleLED()) {}
+  } else if (currentMode == ONLY_SOUND) {
+    while(soundBuzzer()) {};
   }
-  // end alerting rework
-
+  // end alerting
 
 } // end loop()
 
