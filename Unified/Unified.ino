@@ -23,8 +23,7 @@ int lastDownState = HIGH;
 // weight
 #define fsrpin A0
 int fsrreading { 0 }; // from 0 to 1023
-enum WEIGHT_DETECTED {NOT_DETECTED, DETECTED};
-int objectDetected = NOT_DETECTED;
+bool objectDetected = false;
 // one pin
 
 // motion detection
@@ -107,13 +106,15 @@ void loop() {
   Serial.print("Analog reading = ");
   // Print the fsrreading:
   Serial.print(fsrreading);
+  Serial.println(" ");
   // We can set some thresholds to display how much pressure is roughly applied:
   // TODO: use this value in an if() or while() as a threshold gate
   if (fsrreading > 200) {
-    objectDetected = DETECTED;
+    objectDetected = true;
+    Serial.println("Object Detected");
   }
    else {
-    objectDetected = NOT_DETECTED;
+    Serial.println("Object Not Detected");
   }
   delay(1000); // problematic
   // end weight detection
@@ -121,7 +122,7 @@ void loop() {
 
   // motion detection
   val = digitalRead(pin_pir);  // read input value
-  if (val == HIGH && objectDetected == DETECTED) {            // check if the input is HIGH
+  if (val == HIGH && objectDetected) {            // check if the input is HIGH
     // TODO: refactor for RGB LED
     alertUser = true;
     if (pirState == HIGH) {
@@ -147,7 +148,7 @@ void loop() {
 
   // alerting
   // TODO: refactor this entire thing
-  // while (currentMode == ONLY_SOUND && objectDetected == DETECTED) { // switch is set to buzzer
+  // while (currentMode == ONLY_SOUND && objectDetected) { // switch is set to buzzer
   //   // TODO: change escape value
   //   if (mode != BUZZER) { // resets RGBLED values
   //     mode = BUZZER; // RGBLEDs stay lit without this
