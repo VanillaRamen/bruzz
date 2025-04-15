@@ -1,18 +1,21 @@
 #include <LiquidCrystal.h>
 #define BUTTON_UP 2    // Typical top button
 #define BUTTON_DOWN 1  // Beta bottom button
-#define fsrpin A0
+#define fsrpin A0      // Force Pressure data
 
-#define pin_buzzer  11
-#define rgb_red     10
-#define rgb_green   9
-#define rgb_blue    3
-int RED { 0 }; // RGB VALS
-int GREEN { 0 }; // initiated halfway through spectrum
-int BLUE { 0 }; // to avoid darkness
-int colorphase { 0 };
-unsigned long recordedTime { 0 };
-enum DEVICE_MODE {BOTH, ONLY_LIGHTS, ONLY_SOUND, OFF};
+#define pin_buzzer 11
+#define rgb_red 10
+#define rgb_green 9
+#define rgb_blue 3
+int RED{ 0 };                     // RGB VALS
+int GREEN{ 0 };                   // initiated halfway through spectrum
+int BLUE{ 0 };                    // to avoid darkness
+int colorphase{ 0 };              // var used to track current cycle of color
+unsigned long recordedTime{ 0 };  // used to track delay
+enum DEVICE_MODE { BOTH,
+                   ONLY_LIGHTS,
+                   ONLY_SOUND,
+                   OFF };
 
 LiquidCrystal lcd(13,  // rs
                   12,  // en
@@ -22,9 +25,9 @@ LiquidCrystal lcd(13,  // rs
                   4);  // d7 // LCD THE GOAT
 
 //Initalizes pins for all components
-int ledPin = 10;
-int pirPin = 8;
-int pirState = LOW;  //PIR              detection state
+int ledPin = 10;     // same pin as RGB Red used to track PIR state (HIGH/LOW)
+int pirPin = 8;      // PIR sensor pin used to track motion
+int pirState = LOW;  //PIR detection state
 int val = 0;         // Value of PIR Input
 
 //Define variable to store sensor readings:
@@ -45,12 +48,12 @@ void updateLCD() {
   lcd.print(modes[currentMode]);
 }
 
-void updateLCD();                 // user interface
-bool cycleLED();                  // alerting
-bool cycleLED_buzz();             // alerting
-bool soundBuzzer();               // alerting
-bool custom_delay(unsigned long); // alerting
-bool button_pressed();            // alerting
+void updateLCD();                  // user interface
+bool cycleLED();                   // alerting
+bool cycleLED_buzz();              // alerting
+bool soundBuzzer();                // alerting
+bool custom_delay(unsigned long);  // alerting
+bool button_pressed();             // alerting
 
 void setup() {
   pinMode(ledPin, OUTPUT);  //Sets LED to Output
@@ -100,7 +103,7 @@ void loop() {
   lastDownState = downState;
 
   // Read the FSR pin and store the outputas fsrreading:
-  
+
   fsrreading = analogRead(fsrpin);
   // Serial.print("Analog reading = ");
 
@@ -119,8 +122,8 @@ void loop() {
     objectDetected = true;
   }
 
-  val = digitalRead(pirPin);     // read input value
-  if (val == HIGH) {             // check if the input is HIGH
+  val = digitalRead(pirPin);   // read input value
+  if (val == HIGH) {           // check if the input is HIGH
     analogWrite(rgb_red, 31);  // turn LED ON
     if (pirState == HIGH) {
 
@@ -149,82 +152,86 @@ void loop() {
   } else if (currentMode == ONLY_LIGHTS && val == HIGH && fsrreading > 200) {
     while (cycleLED()) {}
   } else if (currentMode == ONLY_SOUND && val == HIGH && fsrreading > 200) {
-    while(!button_pressed()) {
+    while (!button_pressed()) {
       tone(pin_buzzer, 440);
-    } noTone(pin_buzzer);
+    }
+    noTone(pin_buzzer);
   }
-} // loop end
+}  // loop end
 
 bool cycleLED() {
-  if (colorphase == 0) { // green rising, red falling
-      RED = 127;
-      GREEN = 0;
-      BLUE = 0;
+  if (colorphase == 0) {  // green rising, red falling
+    RED = 127;
+    GREEN = 0;
+    BLUE = 0;
 
-      for (; !button_pressed() && RED > 0;) {
-        analogWrite(rgb_red, RED); analogWrite(rgb_green, GREEN);
-        RED--;
-        GREEN++;
-        if (custom_delay(50)) { // delay 5 ms
-          return false; // button pressed --> exit function
-        }
+    for (; !button_pressed() && RED > 0;) {
+      analogWrite(rgb_red, RED);
+      analogWrite(rgb_green, GREEN);
+      RED--;
+      GREEN++;
+      if (custom_delay(50)) {  // delay 5 ms
+        return false;          // button pressed --> exit function
       }
+    }
 
-      colorphase++;
+    colorphase++;
 
-      return true;
+    return true;
 
-  } else if (colorphase == 1) { // blue rising, green falling
-      RED = 0;
-      GREEN = 127;
-      BLUE = 0;
+  } else if (colorphase == 1) {  // blue rising, green falling
+    RED = 0;
+    GREEN = 127;
+    BLUE = 0;
 
-      for (; !button_pressed() && GREEN > 0;) {
-        analogWrite(rgb_green, GREEN); analogWrite(rgb_blue, BLUE);
-        GREEN--;
-        BLUE++;
-        if (custom_delay(50)) { // delay 5 ms
-          return false; // button pressed --> exit function
-        }
+    for (; !button_pressed() && GREEN > 0;) {
+      analogWrite(rgb_green, GREEN);
+      analogWrite(rgb_blue, BLUE);
+      GREEN--;
+      BLUE++;
+      if (custom_delay(50)) {  // delay 5 ms
+        return false;          // button pressed --> exit function
       }
+    }
 
-      colorphase++;
+    colorphase++;
 
-      return true;
+    return true;
 
-  } else if (colorphase == 2) { // red rising, blue falling
-      RED = 0;
-      GREEN = 0;
-      BLUE = 127;
+  } else if (colorphase == 2) {  // red rising, blue falling
+    RED = 0;
+    GREEN = 0;
+    BLUE = 127;
 
-      for (; !button_pressed() && BLUE > 0;) {
-        analogWrite(rgb_red, RED); analogWrite(rgb_blue, BLUE);
-        RED++;
-        BLUE--;
-        if (custom_delay(50)) { // delay 5 ms
-          return false; // button pressed --> exit function
-        }
+    for (; !button_pressed() && BLUE > 0;) {
+      analogWrite(rgb_red, RED);
+      analogWrite(rgb_blue, BLUE);
+      RED++;
+      BLUE--;
+      if (custom_delay(50)) {  // delay 5 ms
+        return false;          // button pressed --> exit function
       }
+    }
 
-      colorphase = 0;
+    colorphase = 0;
 
-      return true;
+    return true;
 
   } else {
-    
-    return false;
 
+    return false;
   }
 }
 
-bool soundBuzzer() { // rough version for now // WARNING: unused
+bool soundBuzzer() {  // rough version for now // WARNING: unused
   while (!button_pressed()) {
     tone(pin_buzzer, 440);
     custom_delay(500);
-  } return false;
+  }
+  return false;
 }
 
-bool custom_delay(unsigned long delay) { // delays for a time while detecting button press
+bool custom_delay(unsigned long delay) {  // delays for a time while detecting button press
   while (millis() - recordedTime < delay) {
     if (button_pressed()) {
       recordedTime = millis();
@@ -251,69 +258,78 @@ bool button_pressed() {
   return false;
 }
 
-bool cycleLED_buzz() { // does not exit??
+bool cycleLED_buzz() {  // does not exit??
   tone(pin_buzzer, 440);
-  if (colorphase == 0) { // green rising, red falling
-      RED = 63;
-      GREEN = 0;
-      BLUE = 0;
+  if (colorphase == 0) {  // green rising, red falling
+    RED = 63;
+    GREEN = 0;
+    BLUE = 0;
 
-      for (; !button_pressed() && RED > 0;) {
-        analogWrite(rgb_red, RED); analogWrite(rgb_green, GREEN);
-        RED--;
-        GREEN++;
-        if (custom_delay(50)) { // delay 5 ms
-          noTone(pin_buzzer);
-          analogWrite(rgb_red, 0); analogWrite(rgb_green, 0); analogWrite(rgb_blue, 0);
-          return false; // button pressed --> exit function
-        }
+    for (; !button_pressed() && RED > 0;) {
+      analogWrite(rgb_red, RED);
+      analogWrite(rgb_green, GREEN);
+      RED--;
+      GREEN++;
+      if (custom_delay(50)) {  // delay 5 ms
+        noTone(pin_buzzer);
+        analogWrite(rgb_red, 0);
+        analogWrite(rgb_green, 0);
+        analogWrite(rgb_blue, 0);
+        return false;  // button pressed --> exit function
       }
+    }
 
-      colorphase++;
+    colorphase++;
 
-      return true;
+    return true;
 
-  } else if (colorphase == 1) { // blue rising, green falling
-      RED = 0;
-      GREEN = 63;
-      BLUE = 0;
+  } else if (colorphase == 1) {  // blue rising, green falling
+    RED = 0;
+    GREEN = 63;
+    BLUE = 0;
 
-      for (; !button_pressed() && GREEN > 0;) {
-        analogWrite(rgb_green, GREEN); analogWrite(rgb_blue, BLUE);
-        GREEN--;
-        BLUE++;
-        if (custom_delay(50)) { // delay 5 ms
-          noTone(pin_buzzer);
-          analogWrite(rgb_red, 0); analogWrite(rgb_green, 0); analogWrite(rgb_blue, 0);
-          return false; // button pressed --> exit function
-        }
+    for (; !button_pressed() && GREEN > 0;) {
+      analogWrite(rgb_green, GREEN);
+      analogWrite(rgb_blue, BLUE);
+      GREEN--;
+      BLUE++;
+      if (custom_delay(50)) {  // delay 5 ms
+        noTone(pin_buzzer);
+        analogWrite(rgb_red, 0);
+        analogWrite(rgb_green, 0);
+        analogWrite(rgb_blue, 0);
+        return false;  // button pressed --> exit function
       }
+    }
 
-      colorphase++;
+    colorphase++;
 
-      return true;
+    return true;
 
-  } else if (colorphase == 2) { // red rising, blue falling
-      RED = 0;
-      GREEN = 0;
-      BLUE = 63;
+  } else if (colorphase == 2) {  // red rising, blue falling
+    RED = 0;
+    GREEN = 0;
+    BLUE = 63;
 
-      for (; !button_pressed() && BLUE > 0;) {
-        analogWrite(rgb_red, RED); analogWrite(rgb_blue, BLUE);
-        RED++;
-        BLUE--;
-        if (custom_delay(50)) { // delay 5 ms
-          noTone(pin_buzzer);
-          analogWrite(rgb_red, 0); analogWrite(rgb_green, 0); analogWrite(rgb_blue, 0);
-          return false; // button pressed --> exit function
-        }
+    for (; !button_pressed() && BLUE > 0;) {
+      analogWrite(rgb_red, RED);
+      analogWrite(rgb_blue, BLUE);
+      RED++;
+      BLUE--;
+      if (custom_delay(50)) {  // delay 5 ms
+        noTone(pin_buzzer);
+        analogWrite(rgb_red, 0);
+        analogWrite(rgb_green, 0);
+        analogWrite(rgb_blue, 0);
+        return false;  // button pressed --> exit function
       }
+    }
 
-      colorphase = 0;
+    colorphase = 0;
 
-      return true;
+    return true;
 
   } else {
-    return false; // error?
+    return false;  // error?
   }
 }
