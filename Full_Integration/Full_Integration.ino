@@ -82,7 +82,7 @@ void loop() {
   // Updates the mode going up
   if (upState == HIGH && lastUpState == LOW) {
     currentMode++;
-    if (currentMode >= 4) {
+    if (currentMode > 3) {
       currentMode = 0;
     }
     updateLCD();
@@ -104,19 +104,15 @@ void loop() {
   fsrreading = analogRead(fsrpin);
   // Serial.print("Analog reading = ");
 
-  // Print the fsrreading:
-  // Serial.print(fsrreading);
-  // Serial.println();
-  // We can set some threshholds to display how much pressure is roughly applied:
-  if (fsrreading > 200) {
-    objectDetected = true;
-    Serial.println("Weight Detected");
-  } else {
-    // Serial.println("Object Not Detected");
-  }
+  // debugging
+  Serial.print("FSR Reading: ");
+  Serial.println(fsrreading);
 
-  if (fsrreading > 200) {
+  // threshold
+  if (fsrreading > 400) {
     objectDetected = true;
+  } else {
+    objectDetected = false;
   }
 
   val = digitalRead(pirPin);     // read input value
@@ -144,11 +140,11 @@ void loop() {
     analogWrite(rgb_green, 0);
     analogWrite(rgb_blue, 0);
     noTone(pin_buzzer);
-  } else if (currentMode == BOTH && val == HIGH && fsrreading > 200) {
+  } else if (currentMode == BOTH && val == HIGH && objectDetected) {
     while (cycleLED_buzz()) {}
-  } else if (currentMode == ONLY_LIGHTS && val == HIGH && fsrreading > 200) {
+  } else if (currentMode == ONLY_LIGHTS && val == HIGH && objectDetected) {
     while (cycleLED()) {}
-  } else if (currentMode == ONLY_SOUND && val == HIGH && fsrreading > 200) {
+  } else if (currentMode == ONLY_SOUND && val == HIGH && objectDetected) {
     while(!button_pressed()) {
       tone(pin_buzzer, 440);
     } noTone(pin_buzzer);
