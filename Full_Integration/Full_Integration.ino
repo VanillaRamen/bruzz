@@ -1,3 +1,7 @@
+// control flow for this program relies
+// heavily on if...else statements and
+// while() loops.
+
 #include <LiquidCrystal.h>
 #define BUTTON_UP 2    // Typical top button
 #define BUTTON_DOWN 1  // Beta bottom button
@@ -7,11 +11,11 @@
 #define rgb_red     10
 #define rgb_green   9
 #define rgb_blue    3
-int RED { 0 }; // RGB VALS
-int GREEN { 0 }; // initiated halfway through spectrum
-int BLUE { 0 }; // to avoid darkness
-int colorphase { 0 };
-unsigned long recordedTime { 0 };
+int RED { 0 }; // RGB values
+int GREEN { 0 };
+int BLUE { 0 };
+int colorphase { 0 }; // tracks which part of the spectrum is cycling
+unsigned long recordedTime { 0 }; // time tracking (for use with millis())
 enum DEVICE_MODE {BOTH, ONLY_LIGHTS, ONLY_SOUND, OFF};
 
 LiquidCrystal lcd(13,  // rs
@@ -21,36 +25,39 @@ LiquidCrystal lcd(13,  // rs
                   5,   // d6
                   4);  // d7 // LCD THE GOAT
 
-//Initalizes pins for all components
+// Initalizes pins for all components
 int ledPin = 10;
 int pirPin = 8;
 int pirState = LOW;  //PIR              detection state
-int val = 0;         // Value of PIR Input
+int pirVal = 0;         // Value of PIR Input
 
-//Define variable to store sensor readings:
-int fsrreading = { 0 };  // Variable to store FSR
+// Define variable to store sensor readings:
+int fsrreading = { 0 };  // Variable to store FSR reading
 bool objectDetected = false;
-int currentMode = 0;
-String modes[4] = { "Both", "Only Lights", "Only Sound", "Off" };  // All the modes
+int currentMode = 0; // cycle through modes and use with below array for display
+String modes[4] = { "Both", "Only Lights", "Only Sound", "Off" };  // All the modes (for display)
 
 int upState = HIGH;
 int downState = HIGH;
-int lastUpState = HIGH;    // Saves the state of the button, helpful to know if it was pressed
-int lastDownState = HIGH;  // Ditto
+int lastUpState = HIGH; // Saves the state of the button, helpful to know if it was pressed
+int lastDownState = HIGH;
 
 void updateLCD() {
   // Sets up the LCD to be used
+  // and updates it later
   lcd.clear();
   lcd.print("Mode: ");
   lcd.print(modes[currentMode]);
 }
 
+// forward function declarations
 void updateLCD();                 // user interface
 bool cycleLED();                  // alerting
 bool cycleLED_buzz();             // alerting
-bool soundBuzzer();               // alerting
 bool custom_delay(unsigned long); // alerting
 bool button_pressed();            // alerting
+
+
 
 void setup() {
   pinMode(ledPin, OUTPUT);  //Sets LED to Output
@@ -99,6 +106,9 @@ void loop() {
   }
   lastDownState = downState;
 
+  // // lock it in off
+  // currentMode = 3;
+
   // Read the FSR pin and store the outputas fsrreading:
   
   fsrreading = analogRead(fsrpin);
@@ -115,8 +125,8 @@ void loop() {
     objectDetected = false;
   }
 
-  val = digitalRead(pirPin);     // read input value
-  if (val == HIGH) {             // check if the input is HIGH
+  pirVal = digitalRead(pirPin);     // read input value
+  if (pirVal == HIGH) {             // check if the input is HIGH
     analogWrite(rgb_red, 31);  // turn LED ON
     if (pirState == HIGH) {
 
@@ -140,17 +150,21 @@ void loop() {
     analogWrite(rgb_green, 0);
     analogWrite(rgb_blue, 0);
     noTone(pin_buzzer);
-  } else if (currentMode == BOTH && val == HIGH && objectDetected) {
+  } else if (currentMode == BOTH && pirVal == HIGH && objectDetected) {
     while (cycleLED_buzz()) {}
-  } else if (currentMode == ONLY_LIGHTS && val == HIGH && objectDetected) {
+  } else if (currentMode == ONLY_LIGHTS && pirVal == HIGH && objectDetected) {
     while (cycleLED()) {}
-  } else if (currentMode == ONLY_SOUND && val == HIGH && objectDetected) {
+  } else if (currentMode == ONLY_SOUND && pirVal == HIGH && objectDetected) {
+    // ONLY_SOUND mode handles buzzer in line without
     while(!button_pressed()) {
       tone(pin_buzzer, 440);
     } noTone(pin_buzzer);
   }
 } // loop end
 
+
+// function definitions
+// cycles LED only but no buzzer
 bool cycleLED() {
   if (colorphase == 0) { // green rising, red falling
       RED = 127;
@@ -216,13 +230,8 @@ bool cycleLED() {
   }
 }
 
-bool soundBuzzer() { // rough version for now // WARNING: unused
-  while (!button_pressed()) {
-    tone(pin_buzzer, 440);
-    custom_delay(500);
-  } return false;
-}
 
+// button-interruptible delay
 bool custom_delay(unsigned long delay) { // delays for a time while detecting button press
   while (millis() - recordedTime < delay) {
     if (button_pressed()) {
@@ -234,6 +243,7 @@ bool custom_delay(unsigned long delay) { // delays for a time while detecting bu
   return false;
 }
 
+// light function to check if either button has been pressed
 bool button_pressed() {
   upState = digitalRead(BUTTON_UP);
   downState = digitalRead(BUTTON_DOWN);
@@ -250,7 +260,8 @@ bool button_pressed() {
   return false;
 }
 
-bool cycleLED_buzz() { // does not exit??
+// cycles LED and sounds buzzer
+bool cycleLED_buzz() {
   tone(pin_buzzer, 440);
   if (colorphase == 0) { // green rising, red falling
       RED = 127;
